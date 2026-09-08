@@ -1,0 +1,70 @@
+### Spec First API — manual request collection
+#
+# For the VS Code "REST Client" extension (humao.rest-client). Open this
+# file, then click "Send Request" above each block (or use the extension's
+# keyboard shortcut) - requests run top to bottom, and later ones reuse the
+# token/event id captured from earlier responses via {{name.response.body...}}.
+#
+# Prerequisites:
+#   make dev-db && make migrate-up && make run-backend
+# (see README.md - the API listens on @baseUrl below by default)
+
+@baseUrl = http://localhost:8080
+@email = demo@example.com
+@password = password123
+@name = Demo User
+
+### Register a new user
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "name": "{{name}}"
+}
+
+### Log in and get a JWT
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### List events (global list - any authenticated user sees every event, not just their own)
+GET {{baseUrl}}/events
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Create an event
+# @name createEvent
+POST {{baseUrl}}/events
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Backyard BBQ",
+  "date": "2026-10-04T18:00:00Z",
+  "location": "12 Elm St"
+}
+
+### List events again - the one just created should be there
+GET {{baseUrl}}/events
+Authorization: Bearer {{login.response.body.$.token}}
+
+### Add a guest to the event just created
+POST {{baseUrl}}/events/{{createEvent.response.body.$.id}}/guests
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Sam Rivera",
+  "email": "sam@example.com"
+}
+
+### List guests for that event
+GET {{baseUrl}}/events/{{createEvent.response.body.$.id}}/guests
+Authorization: Bearer {{login.response.body.$.token}}

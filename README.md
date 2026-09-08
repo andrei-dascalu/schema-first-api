@@ -12,6 +12,11 @@ source of truth for the HTTP API:
 - `frontend/` — Vue 3, TypeScript, Pinia, Vue Router, and Vite.
 - `docs/api_schema.yaml` — generates the Go server interface/models and the
   TypeScript API client/models.
+- `docs/requests.http` — a manual request collection (register, log in,
+  list/create an event, add/list a guest) for the [VS Code REST Client
+  extension](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
+  Open it, run requests top to bottom with "Send Request" — later requests
+  reuse the JWT and event id captured from earlier responses.
 - `compose.yml` — local PostgreSQL only. The API and frontend run on the
   host during development. Works with Podman or Docker Compose.
 
