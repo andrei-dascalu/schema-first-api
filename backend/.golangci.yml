@@ -1,0 +1,25 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - depguard
+    - forbidigo
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: log
+              desc: use github.com/rs/zerolog (or github.com/rs/zerolog/log) instead of the standard library log package
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print(f|ln)?$
+          msg: use zerolog instead of fmt for program output
+        - pattern: ^fmt\.Fprint(f|ln)?$
+          msg: use zerolog instead of fmt for program output
+
+issues:
+  exclude-dirs:
+    - internal/api
+    - internal/store/postgres/db

@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:18.4-alpine
+    environment:
+      POSTGRES_USER: spec_first
+      POSTGRES_PASSWORD: spec_first
+      POSTGRES_DB: spec_first
+    ports:
+      - "5432:5432"
+    volumes:
+      - spec-first-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spec_first"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  spec-first-db:

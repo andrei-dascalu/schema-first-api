@@ -1,0 +1,17 @@
+# Go
+backend/spec-first-backend
+*.test
+*.out
+.bin/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
+.env
+backend/.env
+CLAUDE.md
+
+# OS
+.DS_Store
