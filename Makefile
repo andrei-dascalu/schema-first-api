@@ -9,6 +9,9 @@
 REPO_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 LOCAL_BIN := $(REPO_ROOT)/.bin
 
+# Container runtime: prefer Podman, fall back to Docker if it's not on PATH.
+CONTAINER_ENGINE := $(shell command -v podman >/dev/null 2>&1 && echo podman || echo docker)
+
 # Pinned repository-local Go CLI tools. Versioned stamps force a reinstall
 # after a pin changes, even when a binary with the same name already exists.
 GOLANGCI_LINT_VERSION := v2.13.2
@@ -90,10 +93,10 @@ generate-frontend:
 
 # --- local infra ---------------------------------------------------------
 dev-db:
-	podman compose -f podman-compose.yml up -d --wait
+	$(CONTAINER_ENGINE) compose -f compose.yml up -d --wait
 
 dev-db-down:
-	podman compose -f podman-compose.yml down
+	$(CONTAINER_ENGINE) compose -f compose.yml down
 
 migrate-up:
 	cd backend && go run ./cmd/migrate up
@@ -130,14 +133,26 @@ lint-frontend:
 # --- tests ---------------------------------------------------------------
 # Unit tests carry no build tag; integration tests are tagged `integration`
 # and spin up Postgres via testcontainers-go (needs a running container
-# runtime - see the Podman/testcontainers note in CLAUDE.md).
+# runtime - see the Podman/Docker + testcontainers note in CLAUDE.md).
 test: test-unit test-integration test-frontend
 
 test-unit:
 	cd backend && go test ./...
 
+# testcontainers-go talks to the container runtime's Docker-compatible API. A
+# real Docker daemon exposes that at its usual socket, so no extra setup is
+# needed there. Podman's rootless machine (macOS/Windows) needs DOCKER_HOST
+# pointed explicitly at its API socket, and Ryuk (testcontainers' cleanup
+# sidecar) disabled since it doesn't work against rootless Podman.
+ifeq ($(CONTAINER_ENGINE),podman)
+test-integration:
+	DOCKER_HOST="unix://$$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')" \
+	TESTCONTAINERS_RYUK_DISABLED=true \
+	sh -c 'cd backend && go test -tags=integration ./...'
+else
 test-integration:
 	cd backend && go test -tags=integration ./...
+endif
 
 test-frontend:
 	cd frontend && npm run test

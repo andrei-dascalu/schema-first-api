@@ -12,8 +12,8 @@ source of truth for the HTTP API:
 - `frontend/` — Vue 3, TypeScript, Pinia, Vue Router, and Vite.
 - `docs/api_schema.yaml` — generates the Go server interface/models and the
   TypeScript API client/models.
-- `podman-compose.yml` — local PostgreSQL only. The API and frontend run on the
-  host during development.
+- `compose.yml` — local PostgreSQL only. The API and frontend run on the
+  host during development. Works with Podman or Docker Compose.
 
 Generated files are committed, but must not be edited by hand:
 
@@ -25,7 +25,9 @@ Generated files are committed, but must not be edited by hand:
 
 - Go 1.27.1 (as declared in `backend/go.mod`)
 - Node.js and npm
-- Podman with Compose support and a running Podman machine
+- Podman or Docker, with Compose support (the Makefile prefers Podman and
+  falls back to Docker automatically if Podman isn't on `PATH`). On
+  macOS/Windows with Podman, a running Podman machine is required.
 - `make`
 
 Go CLI tools are installed at pinned versions in the ignored root `.bin/`
@@ -53,7 +55,7 @@ cd frontend && npm ci && cd ..
 ```
 
 Review `backend/.env` if local ports or credentials need to change. Its default
-values match `podman-compose.yml`. The Makefile loads this file automatically
+values match `compose.yml`. The Makefile loads this file automatically
 for migration and backend commands.
 
 Start each part in this order:
@@ -186,7 +188,7 @@ must not call the PostgreSQL adapter directly.
 
 | Command | Purpose |
 | --- | --- |
-| `make dev-db` | Start local PostgreSQL with Podman Compose |
+| `make dev-db` | Start local PostgreSQL (Podman Compose, or Docker Compose if Podman isn't installed) |
 | `make dev-db-down` | Stop local PostgreSQL |
 | `make migrate-up` | Apply pending migrations |
 | `make migrate-down` | Roll back one migration |
@@ -200,13 +202,20 @@ must not call the PostgreSQL adapter directly.
 | `make install-go-tools` | Install all pinned Go CLI tools into `.bin/` |
 | `make tool-versions` | Install tools if needed and print their versions |
 
-### Podman integration tests
+### Podman/Docker integration tests
 
-For testcontainers-go to use a rootless Podman machine, point it at Podman's API
-socket and disable Ryuk before running integration tests:
+`make test-integration` runs testcontainers-go tests against whichever
+container runtime the Makefile detected (Podman preferred, Docker as
+fallback — see `CONTAINER_ENGINE` in the Makefile).
 
-```sh
-export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
-export TESTCONTAINERS_RYUK_DISABLED=true
-make test-integration
-```
+- **Docker:** no extra setup — `make test-integration` just works.
+- **Podman:** the Makefile automatically points testcontainers at Podman's
+  rootless machine socket and disables Ryuk (testcontainers' cleanup sidecar,
+  which doesn't work against rootless Podman) for this target. If you invoke
+  `go test -tags=integration ./...` directly instead of through `make`,
+  export both yourself first:
+
+  ```sh
+  export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
+  export TESTCONTAINERS_RYUK_DISABLED=true
+  ```
