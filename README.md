@@ -224,3 +224,19 @@ fallback — see `CONTAINER_ENGINE` in the Makefile).
   export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
   export TESTCONTAINERS_RYUK_DISABLED=true
   ```
+
+## Choosing an oapi-codegen server target
+
+The backend currently selects `chi-server` in
+`backend/oapi-codegen.config.yaml`, but `oapi-codegen` v2.8.0 can generate
+server boilerplate for Chi, Echo v4/v5, Fiber v2/v3, Gin, gorilla/mux, Iris,
+or the Go standard library's `net/http` router. The corresponding generation
+flags are `chi-server`, `echo-server`, `echo5-server`, `fiber-server`,
+`fiber-v3-server`, `gin-server`, `gorilla-server`, `iris-server`, and
+`std-http-server`.
+
+Only one server target may be enabled at a time. `strict-server` can optionally
+be enabled alongside that target to generate the stricter request/response
+interface; it is not a router itself. Switching targets requires regenerating
+the backend and adapting framework-specific routing, middleware, and handler
+signatures where necessary. Do not edit the generated code directly.
