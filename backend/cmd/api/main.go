@@ -80,6 +80,15 @@ func main() {
 		r.Use(validator)
 		r.Use(handlers.Middleware(issuer))
 
+		// Group-scoped middleware only runs after chi matches a route. Register
+		// an OPTIONS wildcard so preflight requests reach the CORS middleware
+		// instead of chi's method-not-allowed handler.
+		if len(cfg.CORSOrigins) > 0 {
+			r.Options("/*", func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusNoContent)
+			})
+		}
+
 		api.HandlerFromMux(h, r)
 	})
 

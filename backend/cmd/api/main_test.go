@@ -11,9 +11,14 @@ import (
 
 func TestCORSMiddlewareAllowsConfiguredOrigin(t *testing.T) {
 	router := chi.NewRouter()
-	router.Use(corsMiddleware([]string{"https://frontend.example.com"}))
-	router.Get("/resource", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
+	router.Group(func(r chi.Router) {
+		r.Use(corsMiddleware([]string{"https://frontend.example.com"}))
+		r.Options("/*", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		})
+		r.Get("/resource", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusNoContent)
+		})
 	})
 
 	req := httptest.NewRequest(http.MethodOptions, "/resource", nil)

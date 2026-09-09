@@ -10,9 +10,18 @@
 # (see README.md - the API listens on @baseUrl below by default)
 
 @baseUrl = http://localhost:8080
+@corsOrigin = http://localhost:5173
 @email = demo@example.com
 @password = password123
 @name = Demo User
+
+### CORS preflight
+# Expect Access-Control-Allow-Origin to equal @corsOrigin. The value must be
+# present in the backend's comma-separated CORS_ORIGINS configuration.
+OPTIONS {{baseUrl}}/events
+Origin: {{corsOrigin}}
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, Authorization
 
 ### Register a new user
 # @name register
