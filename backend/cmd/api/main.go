@@ -74,13 +74,7 @@ func main() {
 		// short-circuits OPTIONS preflights itself, which otherwise wouldn't
 		// match any documented operation and would fail validation.
 		if len(cfg.CORSOrigins) > 0 {
-			r.Use(cors.Handler(cors.Options{
-				AllowedOrigins:   cfg.CORSOrigins,
-				AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-				AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
-				AllowCredentials: false,
-				MaxAge:           300,
-			}))
+			r.Use(corsMiddleware(cfg.CORSOrigins))
 		}
 		r.Use(handlers.MetricsMiddleware())
 		r.Use(validator)
@@ -89,8 +83,19 @@ func main() {
 		api.HandlerFromMux(h, r)
 	})
 
+	log.Info().Strs("cors_origins", cfg.CORSOrigins).Msg("CORS configured")
 	log.Info().Str("port", cfg.Port).Msg("listening")
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
 		log.Fatal().Err(err).Msg("server stopped")
 	}
+}
+
+func corsMiddleware(origins []string) func(http.Handler) http.Handler {
+	return cors.Handler(cors.Options{
+		AllowedOrigins:   origins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	})
 }
